@@ -8,12 +8,14 @@ enum {
 };
 
 wxBEGIN_EVENT_TABLE(TextEditorField, wxRichTextCtrl)
-EVT_CONTEXT_MENU(TextEditorField::OnContextMenu)
-EVT_MENU(ID_MAKE_ITALIC, TextEditorField::OnMakeItalic)
-EVT_MENU(ID_MAKE_BOLD, TextEditorField::OnMakeBold)
-EVT_MENU(ID_CHANGE_FONT_SIZE, TextEditorField::OnChangeFontSize)
+    EVT_CONTEXT_MENU(TextEditorField::OnContextMenu)
+    EVT_MENU(ID_MAKE_ITALIC, TextEditorField::OnMakeItalic)
+    EVT_MENU(ID_MAKE_BOLD, TextEditorField::OnMakeBold)
+    EVT_UPDATE_UI(ID_MAKE_ITALIC, TextEditorField::OnUpdateMenuItem) // Обновление состояния пункта меню
+    EVT_UPDATE_UI(ID_MAKE_BOLD, TextEditorField::OnUpdateMenuItem)
+//EVT_MENU(ID_CHANGE_FONT_SIZE, TextEditorField::OnChangeFontSize)
 wxEND_EVENT_TABLE()
-
+/*
 // Коллбэк для обработки элементов Markdown
 int TextEditorField::MDCallback(MD_SPANTYPE tag, MD_TAGTYPE type, void* userdata) {
     TextEditorField* textCtrl = static_cast<TextEditorField*>(userdata);
@@ -62,32 +64,30 @@ void TextEditorField::InsertMarkdown(const wxString& markdown) {
 
     md_parse(markdown.c_str(), markdown.size(), &parser, this);
 }
+*/
 
 // Обработчик события контекстного меню
 void TextEditorField::OnContextMenu(wxContextMenuEvent& event) {
     // Создаем контекстное меню
     wxMenu menu;
 
-    // Добавляем стандартные действия
-    menu.Append(wxID_COPY, "Копировать");
-    menu.Append(wxID_PASTE, "Вставить");
-    menu.Append(wxID_CUT, "Вырезать");
+    menu.Append(wxID_COPY, wxString::FromUTF8("Копировать"));
+    menu.Append(wxID_PASTE, wxString::FromUTF8("Вставить"));
+    menu.Append(wxID_CUT, wxString::FromUTF8("Вырезать"));
     menu.AppendSeparator();
 
-    // Добавляем новый пункт меню
-    menu.AppendCheckItem(ID_MAKE_ITALIC, "Курсив");
-    menu.AppendCheckItem(ID_MAKE_BOLD, "Жирный");
+    menu.AppendCheckItem(ID_MAKE_ITALIC, wxString::FromUTF8("Курсив"));
+    menu.AppendCheckItem(ID_MAKE_BOLD, wxString::FromUTF8("Жирный"));
     menu.AppendSeparator();
 
-    // Добавляем пункт для вставки Markdown
-    menu.Append(ID_CHANGE_FONT_SIZE, "Вставить Markdown");
+    menu.Append(ID_CHANGE_FONT_SIZE, wxString::FromUTF8("Вставить Markdown"));
 
     // Привязываем обработчики событий
     Bind(wxEVT_MENU, &TextEditorField::OnMakeItalic, this, ID_MAKE_ITALIC);
     Bind(wxEVT_MENU, &TextEditorField::OnMakeBold, this, ID_MAKE_BOLD);
-    Bind(wxEVT_MENU, [this](wxCommandEvent&) {
-        InsertMarkdown("**Жирный текст** и *курсив*"); // Пример Markdown
-        }, ID_CHANGE_FONT_SIZE);
+    //Bind(wxEVT_MENU, [this](wxCommandEvent&) {
+      //  InsertMarkdown("**Жирный текст** и *курсив*"); // Пример Markdown
+        //}, ID_CHANGE_FONT_SIZE);
 
     // Показываем меню
     PopupMenu(&menu);
@@ -134,6 +134,24 @@ void TextEditorField::OnMakeBold(wxCommandEvent& event) {
     }
 }
 
+void TextEditorField::OnUpdateMenuItem(wxUpdateUIEvent& event) {
+    wxRichTextRange range = GetSelectionRange();
+    if (range.GetLength() > 0) {
+        wxRichTextAttr attr;
+        GetStyle(range.GetStart(), attr);
+
+        if (event.GetId() == ID_MAKE_ITALIC) {
+            event.Check(attr.GetFontStyle() == wxFONTSTYLE_ITALIC);
+        }
+        else if (event.GetId() == ID_MAKE_BOLD) {
+            event.Check(attr.GetFontWeight() == wxFONTWEIGHT_BOLD);
+        }
+    }
+    else {
+        event.Check(false); // Если текст не выделен, пункт меню неактивен
+    }
+}
+/*
 // Обработчик для изменения размера шрифта
 void TextEditorField::OnChangeFontSize(wxCommandEvent& event) {
     wxRichTextRange range = GetSelectionRange();
@@ -157,3 +175,4 @@ void TextEditorField::OnChangeFontSize(wxCommandEvent& event) {
         }
     }
 }
+*/
